@@ -1,0 +1,18 @@
+node_modules
+dist
+coverage
+*.tsbuildinfo
+
+# Credentials — mounted at runtime, never baked into the image.
+config.json
+
+.git
+.gitignore
+.claude
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+build.sh
+*.log
+.DS_Store
