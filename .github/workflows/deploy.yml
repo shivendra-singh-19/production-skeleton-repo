@@ -1,8 +1,3 @@
-name: Deploy
-
-on:
-  workflow_dispatch:
-
 permissions:
   id-token: write
   contents: read
@@ -12,19 +7,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug GitHub OIDC token
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('sts.amazonaws.com');
+
+            const payload = JSON.parse(
+              Buffer.from(token.split('.')[1], 'base64url').toString()
+            );
+
+            console.log('OIDC sub:', payload.sub);
+            console.log('OIDC aud:', payload.aud);
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::801969732023:role/GitHubActionsDeployRole
           aws-region: ap-south-1
-
-      - name: Test AWS access
-        run: |
-          aws sts get-caller-identity
-
-      - name: Test SSM
-        run: |
-          aws ssm send-command \
-            --instance-ids i-0c45cbc8cc90c4afa \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["whoami","docker --version","pwd"]'
