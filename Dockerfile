@@ -19,29 +19,24 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# AWS CLI is required by entrypoint.sh to fetch secrets
 RUN apk add --no-cache aws-cli jq
 
-# Production dependencies only
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --production \
     && yarn cache clean
 
-# Application
 COPY --from=build /app/dist ./dist
-
-# Startup script
 COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
 
-# Secrets are NOT copied into the image.
-# entrypoint.sh fetches config.json from AWS Secrets Manager at startup.
+# Create config location and explicitly give node ownership
+RUN mkdir -p /app \
+    && chown -R node:node /app \
+    && chmod +x /app/entrypoint.sh
 
+USER node
 
 EXPOSE 3000
 
-ENTRYPOINT ["./entrypoint.sh"]
-
-USER node
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 CMD ["node", "dist/main.js"]
