@@ -11,7 +11,7 @@ export interface DependencyStatus {
 }
 
 export interface HealthReport {
-  status: 'ok' | 'degraded';
+  status: 'running' | 'degraded';
   timestamp: string;
   uptimeSeconds: number;
   dependencies: {
@@ -45,7 +45,7 @@ export class HealthService {
 
     const status =
       postgres.status === 'up' && redis.status === 'up'
-        ? ('ok' as const)
+        ? ('running' as const)
         : ('degraded' as const);
 
     return {
