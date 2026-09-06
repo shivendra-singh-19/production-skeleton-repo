@@ -37,10 +37,11 @@ RUN chmod +x ./entrypoint.sh
 # Secrets are NOT copied into the image.
 # entrypoint.sh fetches config.json from AWS Secrets Manager at startup.
 
-USER node
 
 EXPOSE 3000
 
 ENTRYPOINT ["./entrypoint.sh"]
+
+USER node
 
 CMD ["node", "dist/main.js"]
