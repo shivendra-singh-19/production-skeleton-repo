@@ -16,6 +16,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         autoLoadEntities: true,
         synchronize: config.get<boolean>('postgres.synchronize', false),
         logging: config.get<boolean>('postgres.logging', false),
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
   ],

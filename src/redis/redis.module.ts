@@ -26,8 +26,12 @@ import { RedisService } from './redis.service';
           maxRetriesPerRequest: 3,
         });
 
-        client.on('connect', () => logger.log(`Connected to Redis at ${host}:${port}`));
-        client.on('error', (error: Error) => logger.error(`Redis error: ${error.message}`));
+        client.on('connect', () =>
+          logger.log(`Connected to Redis at ${host}:${port}`),
+        );
+        client.on('error', (error: Error) =>
+          logger.error(`Redis error: ${error.message}`),
+        );
 
         return client;
       },
