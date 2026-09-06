@@ -26,7 +26,7 @@ jobs:
             --instance-ids "i-0c45cbc8cc90c4afa" \
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
-              "sudo -iu ubuntu bash -c '\''cd ~/projects/production-skeleton-repo && ./build.sh && docker stop app || true && docker rm -f app || true && ~/containers/app.sh'\''"
+              "sudo -iu ubuntu bash -c '\''cd ~/projects/production-skeleton-repo && git pull origin main && ./build.sh && docker stop app || true && docker rm -f app || true && ~/containers/app.sh'\''"
             ]' \
             --comment "Deploy skeleton backend" \
             --query "Command.CommandId" \
