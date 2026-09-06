@@ -19,9 +19,15 @@ export class HealthController {
    * Returns 503 when any dependency is down so load balancers react correctly.
    */
   @Get()
-  async check(@Res({ passthrough: true }) res: Response): Promise<HealthReport> {
+  async check(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<HealthReport> {
     const report = await this.health.check();
-    res.status(report.status === 'ok' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE);
+    res.status(
+      report.status === 'running'
+        ? HttpStatus.OK
+        : HttpStatus.SERVICE_UNAVAILABLE,
+    );
     return report;
   }
 }
