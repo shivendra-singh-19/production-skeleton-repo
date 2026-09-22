@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { RedisService } from '../redis/redis.service';
 import { HealthCheck } from '../entities/health-check.entity';
+import { LoggerFactory } from 'src/logger/logger.service';
 
 export interface DependencyStatus {
   status: 'up' | 'down';
@@ -24,7 +25,7 @@ const REDIS_PROBE_KEY = 'health:last-check';
 
 @Injectable()
 export class HealthService {
-  private readonly logger = new Logger(HealthService.name);
+  private readonly logger = LoggerFactory.create(HealthService.name);
 
   constructor(
     @InjectRepository(HealthCheck)
@@ -73,12 +74,13 @@ export class HealthService {
         totalEntries: await this.healthChecks.count(),
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Postgres health check failed: ${message}`);
+      this.logger.error({
+        message: 'Postgres health check failed',
+        error,
+      });
       return {
         status: 'down',
         latencyMs: Date.now() - startedAt,
-        error: message,
       };
     }
   }
@@ -96,7 +98,10 @@ export class HealthService {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Redis health check failed: ${message}`);
+      this.logger.error({
+        message: 'Redis health check failed',
+        error,
+      });
       return {
         status: 'down',
         latencyMs: Date.now() - startedAt,

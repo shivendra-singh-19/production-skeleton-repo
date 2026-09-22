@@ -10,6 +10,7 @@ export interface Configuration {
   app: {
     port: number;
     globalPrefix: string;
+    environment?: string;
   };
   postgres: {
     host: string;
@@ -27,6 +28,13 @@ export interface Configuration {
     db: number;
     keyPrefix: string;
   };
+  logging?: {
+    level?: 'error' | 'warn' | 'info' | 'http' | 'debug' | 'verbose';
+    directory?: string;
+    console?: boolean;
+    json?: boolean;
+    captureConsole?: boolean;
+  };
 }
 
 /**
@@ -35,7 +43,9 @@ export interface Configuration {
  */
 export function configFilePath(): string {
   const configured = process.env.CONFIG_PATH ?? 'config.json';
-  return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
+  return isAbsolute(configured)
+    ? configured
+    : resolve(process.cwd(), configured);
 }
 
 /**
@@ -43,11 +53,11 @@ export function configFilePath(): string {
  * is reachable with a dotted path — `config.get('postgres.host')` — without
  * being enumerated here.
  */
-export function loadConfiguration(): Record<string, unknown> {
+export function loadConfiguration(): Configuration {
   const path = configFilePath();
 
   try {
-    return JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+    return JSON.parse(readFileSync(path, 'utf8')) as Configuration;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     throw new Error(
@@ -55,3 +65,13 @@ export function loadConfiguration(): Record<string, unknown> {
     );
   }
 }
+
+/**
+ * The parsed config, read once at import time. Import it like any other module
+ * wherever ConfigService is not available yet — the logger, for instance, has to
+ * be up before the Nest container exists:
+ *
+ *     import { config } from '../config/configuration';
+ *     config.logging?.level;
+ */
+export const config: Configuration = loadConfiguration();

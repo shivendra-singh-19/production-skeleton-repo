@@ -1,11 +1,25 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
+import {
+  LoggerFactory,
+  NestLoggerAdapter,
+  initLogging,
+} from './logger/logger.service';
+
+// First statement in the process: the log file, console capture and crash
+// handlers must exist before any other import can log or throw.
+initLogging();
+
+const logger = LoggerFactory.create('Bootstrap');
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  // bufferLogs holds Nest's startup output until useLogger is set, so none of it
+  // goes out through the default console logger and misses the file.
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(new NestLoggerAdapter());
 
   const config = app.get(ConfigService);
   const port = config.get<number>('app.port', 3000);
@@ -17,7 +31,15 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port);
 
-  new Logger('Bootstrap').log(`Listening on http://localhost:${port}/${globalPrefix}`);
+  logger.log({
+    message: `Listening on http://localhost:${port}/${globalPrefix}`,
+    port,
+    globalPrefix,
+  });
 }
 
-void bootstrap();
+void bootstrap().catch((cause: unknown) => {
+  // Startup failures never reach the Nest logger.
+  logger.fatal({ message: 'Application failed to start', error: cause });
+  process.exitCode = 1;
+});
