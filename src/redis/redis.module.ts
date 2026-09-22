@@ -24,9 +24,13 @@ import { RedisService } from './redis.service';
           keyPrefix: config.get<string>('redis.keyPrefix', ''),
           lazyConnect: false,
           maxRetriesPerRequest: 3,
-          tls: {
-            servername: config.get('redis.serverUrl'),
-          },
+          ...(config.get('app.environment') === 'production'
+            ? {
+                tls: {
+                  servername: config.get('redis.serverUrl'),
+                },
+              }
+            : {}),
         });
 
         client.on('connect', () =>
