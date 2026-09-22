@@ -19,6 +19,7 @@ export interface Configuration {
     password: string;
     database: string;
     synchronize: boolean;
+    migrationsRun: boolean;
     logging: boolean;
   };
   redis: {

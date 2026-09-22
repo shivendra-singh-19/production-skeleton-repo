@@ -2,28 +2,44 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { LoggerFactory } from '../logger/logger.service';
+import { dataSourceOptions } from './data-source';
+import { TypeOrmLogger } from './typeorm-logger';
+
+const logger = LoggerFactory.create('Database');
+
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres' as const,
-        host: config.getOrThrow<string>('postgres.host'),
-        port: config.getOrThrow<number>('postgres.port'),
-        username: config.getOrThrow<string>('postgres.username'),
-        password: config.getOrThrow<string>('postgres.password'),
-        database: config.getOrThrow<string>('postgres.database'),
-        autoLoadEntities: true,
-        synchronize: config.get<boolean>('postgres.synchronize', false),
-        logging: config.get<boolean>('postgres.logging', false),
-        ...(config.get('app.environment') === 'production'
-          ? {
-              ssl: {
-                rejectUnauthorized: false,
-              },
-            }
-          : {}),
-      }),
+      useFactory: (config: ConfigService) => {
+        // Whether to apply pending migrations on boot. Read through
+        // ConfigService like every other setting — config.json is the only
+        // source of configuration, process.env is not consulted.
+        const migrationsRun = config.get<boolean>(
+          'postgres.migrationsRun',
+          false,
+        );
+
+        logger.log({
+          message: migrationsRun
+            ? 'Applying pending migrations on boot'
+            : 'Skipping migrations (postgres.migrationsRun is false)',
+          database: dataSourceOptions.database,
+          migrationsRun,
+        });
+
+        return {
+          ...dataSourceOptions,
+          autoLoadEntities: true,
+          migrationsRun,
+          // Replaces TypeORM's own console printer, so SQL arrives as
+          // structured records instead of colourised text on stdout.
+          logger: new TypeOrmLogger(
+            config.get<boolean>('postgres.logging', false),
+          ),
+        };
+      },
     }),
   ],
 })

@@ -27,7 +27,7 @@ this.config.getOrThrow<string>('postgres.host');  // throws if absent
 this.config.get<number>('redis.db', 0);           // with a fallback
 ```
 
-`src/config/configuration.ts` reads and parses the file; the `Configuration` interface there is
+`src/shared/config/configuration.ts` reads and parses the file; the `Configuration` interface there is
 documentation and editor autocomplete only, not a whitelist.
 
 Set `CONFIG_PATH` to load the file from somewhere else (`CONFIG_PATH=/etc/app/config.json`). That
@@ -39,11 +39,44 @@ env var only relocates the file — it never supplies values.
 | --- | --- |
 | `app.port` | HTTP listen port |
 | `app.globalPrefix` | Route prefix, e.g. `api` |
-| `postgres.*` | host, port, username, password, database, synchronize, logging |
+| `postgres.*` | host, port, username, password, database, synchronize, logging, migrationsRun |
 | `redis.*` | host, port, password (nullable), db, keyPrefix |
 
 > `postgres.synchronize: true` auto-creates tables and is for local development only. Use
 > migrations in production.
+
+## Migrations
+
+Schema changes are TypeORM migrations in `src/shared/database/migrations/`, applied on boot
+when `postgres.migrationsRun` is true.
+
+```bash
+yarn migration:create AddOrdersTable     # empty up/down to fill in by hand
+yarn migration:generate AddOrdersTable   # diffs the entities against the live DB
+```
+
+Both write a timestamped file to `src/shared/database/migrations/`.
+
+Edit it, then set the flag in `config.json` and start the server:
+
+```jsonc
+"postgres": { …, "migrationsRun": true }
+```
+
+Like every other setting this is read through `ConfigService` — `config.json` is the only
+source of configuration, and `process.env` is never consulted for it.
+
+The CLI can also be driven directly — same database, same migrations, since both read
+`src/shared/database/data-source.ts`:
+
+| Command | Description |
+| --- | --- |
+| `yarn migration:run` | Apply pending migrations |
+| `yarn migration:revert` | Roll the last one back |
+| `yarn migration:show` | `[X]` applied, `[ ]` pending |
+
+> `postgres.synchronize` must stay `false` once you are using migrations — the two will
+> fight over the schema.
 
 ## Health endpoints
 
@@ -96,15 +129,19 @@ must be `host.docker.internal` rather than `localhost`.
 
 ```
 src/
-  config/       config.json loader + global ConfigModule wiring
-  database/     TypeOrmModule.forRootAsync, reads postgres.* from config
-  redis/        ioredis client provider + RedisService (ping/get/set)
-  entities/     TypeORM entities (HealthCheck)
+  shared/
+    config/       config.json loader + global ConfigModule wiring
+    database/     DataSource, TypeOrmModule wiring, migrations/
+    redis/        ioredis client provider + RedisService (ping/get/set)
+    logger/       logger.service.ts (all of it) + logger.interceptor.ts
+    entities/     TypeORM entities (HealthCheck)
+    shared.module.ts
   health/       health router + service
   app.module.ts
   main.ts
+logs/
+  production.log  everything, one file; rotation is left to an external rotator
 db/
-  schema.sql    table definitions (synchronize is off; apply this by hand)
 Dockerfile      multi-stage build, runs as the non-root `node` user
 entrypoint.sh   validates config.json, then execs the app
 ```
@@ -118,3 +155,6 @@ entrypoint.sh   validates config.json, then execs the app
 | `yarn start:prod` | Run the compiled build |
 | `yarn typecheck` | `tsc --noEmit` |
 | `yarn format` | Prettier over `src/` |
+| `yarn migration:create <Name>` | Empty migration to fill in by hand |
+| `yarn migration:generate <Name>` | Migration diffed from the entities |
+| `yarn migration:run` / `:revert` / `:show` | Drive migrations without booting the app |

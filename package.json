@@ -12,7 +12,12 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migration:create": "sh -c 'typeorm-ts-node-commonjs migration:create src/shared/database/migrations/$0'",
+    "migration:generate": "sh -c 'typeorm-ts-node-commonjs migration:generate -d src/shared/database/data-source.ts src/shared/database/migrations/$0'",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/shared/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/shared/database/data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/shared/database/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

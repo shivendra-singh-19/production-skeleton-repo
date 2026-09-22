@@ -45,7 +45,7 @@ interface LoggingOptions {
  */
 function resolveOptions(): LoggingOptions {
   const { app, logging = {} } = config;
-  const environment = app.environment ?? process.env.NODE_ENV ?? 'development';
+  const environment = app.environment ?? 'development';
   const directory = logging.directory ?? 'logs';
 
   return {
@@ -79,6 +79,18 @@ for (const stream of [process.stdout, process.stderr]) {
 /** Local time, so a record reads the way the clock on the box did. */
 export const DATE_FORMAT = 'yyyy-MM-dd';
 export const TIME_FORMAT = 'HH:mm:ss.SSS';
+
+/** CSI SGR ("colour") sequences: ESC [ ... m */
+const ANSI_PATTERN = /\u001b\[[0-9;]*m/g;
+
+/**
+ * Removes SGR escape sequences. Plenty of libraries colour their output for a
+ * terminal; captured verbatim those bytes end up as escape litter in the middle
+ * of a JSON string, which is neither readable nor greppable.
+ */
+export function stripAnsi(text: string): string {
+  return text.replace(ANSI_PATTERN, '');
+}
 
 /** One file, always the same name. Rotation is left to an external rotator. */
 export const LOG_FILE_NAME = 'production.log';
@@ -297,7 +309,7 @@ function captureConsole(logger: Winston): void {
         const lines = pending.split('\n');
         pending = lines.pop() ?? '';
         for (const line of lines) {
-          const text = line.replace(/\s+$/, '');
+          const text = stripAnsi(line).replace(/\s+$/, '');
           if (text)
             logger.log(level, text, {
               context: 'Console',
