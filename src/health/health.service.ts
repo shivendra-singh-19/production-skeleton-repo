@@ -2,9 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { RedisService } from '../redis/redis.service';
-import { HealthCheck } from '../entities/health-check.entity';
-import { LoggerFactory } from 'src/logger/logger.service';
+import { RedisService } from '../shared/redis/redis.service';
+import { HealthCheck } from '../shared/entities/health-check.entity';
+import { LoggerFactory } from '../shared/logger/logger.service';
 
 export interface DependencyStatus {
   status: 'up' | 'down';

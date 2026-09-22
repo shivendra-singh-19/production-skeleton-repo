@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { HealthCheck } from '../entities/health-check.entity';
+import { HealthCheck } from '../shared/entities/health-check.entity';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 

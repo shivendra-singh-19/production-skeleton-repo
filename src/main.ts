@@ -7,7 +7,7 @@ import {
   LoggerFactory,
   NestLoggerAdapter,
   initLogging,
-} from './logger/logger.service';
+} from './shared/logger/logger.service';
 
 // First statement in the process: the log file, console capture and crash
 // handlers must exist before any other import can log or throw.
